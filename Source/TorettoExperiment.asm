@@ -33,10 +33,10 @@ CURRENTROAD		= $86 ; Shadow of what a is holding when drawing the road
 ; ------------------------------------------------------------------
 
 BGOFFCOLOUR		= #$28 ; Dusty Desert
-BGONCOLOUR		= #$C6 ; Dark Grey
+BGONCOLOUR		= #$06 ; Dark Grey
 FGCOLOUR		= #$0E ; White
-ROADWIDTH		= #$50 ; Width of road
-SCREENHEIGHT	= #$c0 ; Screen Height (Should be changed on PAL)
+ROADWIDTH		= #$80 ; Width of road
+SCREENHEIGHT	= #192 ; Screen Height (Should be changed on PAL)
 ROADPATTERN		= #%00110011 ; Markings on the road default pattern
 ROADBOUNDRY		= #%11111111 ; Road Boundry
 
@@ -66,111 +66,27 @@ NextFrame
 				lda #FGCOLOUR
 				sta COLUPF
 				
-				; Draw Playfield begin
-				ldx #SCREENHEIGHT
+				ldy #0
 				
-				; Only Calculate road boundries if first time
-				;cmp #ROADCALC, #0
-				;bne PrepareLV
-				
-				; Calcuate where the boundries to the road should be drawn
-				txa
-				lsr
-				sta ROADCENTRE
-				tay ; Can be used later! 
-				
-				; Work out max / 2
-				lda #ROADWIDTH
-				lsr
-				sta ROADWIDTHHALF
-				
-				; Now we know outside edge will be midpoint + (max / 2)
-				tya
-				clc
-				adc #CURRENTROAD
-				sta ROADTOP
-				
-				tya
-				sec
-				sbc #CURRENTROAD
-				sta ROADBOT
-				
-				; Make sure we never do that again
-				lda #1
-				sta ROADCALC
-				
-PrepareLV		
-				lda #ROADTOP
-				sta CURRENTROAD
-				
-				lda #0
-				sta PF0
-				sta PF1
-				sta PF2
-				sta DRAWINGPF
-				
-				ldy #0 ; Using to say if we should draw the midpoint of the road
 LVScan
 				sta WSYNC
 				
-				cmp #DRAWINGPF,#1
-				bne DrawLogic
-				lda #0
-				sta PF0
-				sta PF1
-				sta PF2
-				sta DRAWINGPF
-DrawLogic
-				cmp	#CURRENTROAD,x
-				bne NotRoad
-				
-				; Draw the piece of the road
-				cpy #0
-				bne CentreDraw 
-				
-				lda #ROADBOUNDRY
-				sta PF0
-				sta PF1
-				sta PF2
-				
-				; if not the centre we change BG colour
-				cmp #COLUBK,#BGOFFCOLOUR
-				beq DrawOnRoad
-				
-				; Set to off road colour
-				lda #BGOFFCOLOUR
-				sta COLUBK
-				jmp GetRoadCentre
-DrawOnRoad
-				; set to on-road colour
-				lda #BGONCOLOUR
-				sta COLUBK
-				
-GetRoadCentre
-				
-				lda #ROADCENTRE
-				sta CURRENTROAD
-				
-				ldy #1 ; Now we're drawing the centre
-				tya
-				sta DRAWINGPF
-				
-				jmp NotRoad
-CentreDraw		
-
+				cpy #5
+				bne DrawBlank
 				lda #ROADPATTERN
 				sta PF0
 				sta PF1
 				sta PF2
+				ldy #0
+				jmp EndDraw
+DrawBlank
+				lda #0
+				sta PF0
+				sta PF1
+				sta PF2
 				
-				ldy #0 ; No Longer drawing the centre
-				
-				lda #ROADBOT
-				sta CURRENTROAD
-				
-				lda #1
-				sta DRAWINGPF
-NotRoad
+EndDraw
+				iny
 				dex
 				bne LVScan
 				

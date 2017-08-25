@@ -92,12 +92,12 @@ NextFrame
 				tya
 				sbc #ROADWIDTHHALF
 				sta ROADBOT
+				sta CURRENTROAD
 				
 				; Make sure we never do that again
 				lda #1
 				sta ROADCALC
 				
-				; load Top Road boundry into accumulator (First to be drawn)
 PrepareLV		
 				ldy #0 ; Using to say if we should draw the midpoint of the road
 LVScan

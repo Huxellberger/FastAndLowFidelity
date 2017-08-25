@@ -1,5 +1,8 @@
 ; '2600 for Newbies
 ; Session 13 - Playfield
+; NOTE: NOT WRITTEN BY ME! LIFTED FROM AN ONLINE ATARI 2600 TUTORIAL!
+; http://www.randomterrain.com/atari-2600-memories-tutorial-andrew-davie-13.html
+; By Andrew Davie, Used as purely reference material
 
 
 

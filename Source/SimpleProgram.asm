@@ -8,19 +8,25 @@
 				#include "macro.h"
 				
 ; ------------------------------------------------------------------
+;				START ROM
+; ------------------------------------------------------------------
 				
 				; Start Code here (Start of the ROM memory space)
 				seg Code
 				org $F000
-				
+
+; ------------------------------------------------------------------
+;				Variables In RAM
 ; ------------------------------------------------------------------
 
 BGCOLOUR		= $81
 
 ; ------------------------------------------------------------------
-	
-				; RESET
-Start			sei ; Disable interrupts (don't exist for VCS)
+;				System Reset
+; ------------------------------------------------------------------
+
+Start			
+				sei ; Disable interrupts (don't exist for VCS)
 				cld ; Disable BCD maths mode
 		
 				; Load stack pointer to $FF
@@ -35,9 +41,11 @@ ResetRAM		sta $0,x ; X is already at top of RAM space
 				bne ResetRAM ; branch if not at end of memory
 				
 ; ------------------------------------------------------------------
+; 				Handle VBLANK and VSYNC (NTSC)
+; ------------------------------------------------------------------
 
-				; Enable VBLANK and VSYNC
-NextFrame		lda #2
+NextFrame		
+				lda #2
 				sta VSYNC ; Enable VSYNC
 				sta VBLANK ; Enable VBLANK
 				
@@ -60,6 +68,8 @@ LVBlank
 				sta VBLANK
 				
 ; ------------------------------------------------------------------
+;				Draw A Rainbow!
+; ------------------------------------------------------------------
 
 				; 192 visible scanlines make up our frame
 				; We're going to draw a rainbow
@@ -75,6 +85,8 @@ LVScan
 				
 				
 ; ------------------------------------------------------------------
+;				Handle Overscan (NTSC)
+; ------------------------------------------------------------------
 				
 				; 30 lines of VBLANK (Overscan) to complete the frame
 				lda #2
@@ -86,11 +98,15 @@ LVOver
 				bne LVOver
 				
 ; ------------------------------------------------------------------
+;				Loop Back around!				
+; ------------------------------------------------------------------
 
 				;Alternate the rainbow!
 				dec BGCOLOUR
 				jmp NextFrame
 				
+; ------------------------------------------------------------------
+;				Interrupt Vector Definitions
 ; ------------------------------------------------------------------
 
 				; Set start of program

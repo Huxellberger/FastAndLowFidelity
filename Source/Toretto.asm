@@ -27,16 +27,20 @@ ROADCALC		= $83 ; Have we calculated the road?
 ROADWIDTHHALF	= $84 ; Half of RoadWidth
 DRAWINGPF		= $85 ; Currently Drawing the playfield
 CURRENTROAD		= $86 ; Shadow of what a is holding when drawing the road
+CURRENTPATTERN	= $87 ; Current Road Pattern
+CURRENTBG		= $88 ; Current BG Colour
+CURRENTCYCLE	= $89 ; Current cycle of road
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
 ; ------------------------------------------------------------------
 
 BGOFFCOLOUR		= #$28 ; Dusty Desert
-BGONCOLOUR		= #$C6 ; Dark Grey
+BGONCOLOUR		= #$04 ; Dark Grey
 FGCOLOUR		= #$0E ; White
 ROADWIDTH		= #$50 ; Width of road
 SCREENHEIGHT	= #$c0 ; Screen Height (Should be changed on PAL)
+ROADCYCLE		= #$10 ; Frames before we cycle the road pattern
 ROADPATTERN		= #%00110011 ; Markings on the road default pattern
 ROADBOUNDRY		= #%11111111 ; Road Boundry
 
@@ -46,6 +50,10 @@ ROADBOUNDRY		= #%11111111 ; Road Boundry
 
 Start			
 				CLEAN_START
+				
+				; Setup initial road pattern
+				lda #ROADPATTERN
+				sta CURRENTPATTERN
 				
 ; ------------------------------------------------------------------
 ; 				Handle VBLANK and VSYNC (NTSC)
@@ -58,20 +66,39 @@ NextFrame
 ; ------------------------------------------------------------------
 ;				Draw Playfield
 ; ------------------------------------------------------------------
-
+				
 				; 192 visible scanlines make up our frame on NTSC
 				; Set Background Colour
 				lda #BGOFFCOLOUR
 				sta COLUBK
+				sta CURRENTBG
 				lda #FGCOLOUR
 				sta COLUPF
+				
+				; Rotate road pattern if required (Gives illusion of movement)
+				ldx CURRENTCYCLE
+				dex
+				bne SetupRoadside
+				
+				; If Equal to zero it's time to rotate the road!
+				lda CURRENTPATTERN
+				rol
+				adc #0 ; Don't lose carry bit
+				sta CURRENTPATTERN
+				
+				ldx #ROADCYCLE
+				
+SetupRoadside
+				
+				stx CURRENTCYCLE
 				
 				; Draw Playfield begin
 				ldx #SCREENHEIGHT
 				
 				; Only Calculate road boundries if first time
-				;cmp #ROADCALC, #0
-				;bne PrepareLV
+				lda ROADCALC
+				cmp #0
+				bne PrepareLV
 				
 				; Calcuate where the boundries to the road should be drawn
 				txa
@@ -87,20 +114,19 @@ NextFrame
 				; Now we know outside edge will be midpoint + (max / 2)
 				tya
 				clc
-				adc #CURRENTROAD
+				adc ROADWIDTHHALF
 				sta ROADTOP
 				
 				tya
 				sec
-				sbc #CURRENTROAD
+				sbc ROADWIDTHHALF
 				sta ROADBOT
 				
 				; Make sure we never do that again
 				lda #1
 				sta ROADCALC
-				
 PrepareLV		
-				lda #ROADTOP
+				lda ROADTOP
 				sta CURRENTROAD
 				
 				lda #0
@@ -113,7 +139,8 @@ PrepareLV
 LVScan
 				sta WSYNC
 				
-				cmp #DRAWINGPF,#1
+				lda DRAWINGPF
+				cmp #1
 				bne DrawLogic
 				lda #0
 				sta PF0
@@ -121,7 +148,8 @@ LVScan
 				sta PF2
 				sta DRAWINGPF
 DrawLogic
-				cmp	#CURRENTROAD,x
+				txa
+				cmp	CURRENTROAD
 				bne NotRoad
 				
 				; Draw the piece of the road
@@ -134,21 +162,24 @@ DrawLogic
 				sta PF2
 				
 				; if not the centre we change BG colour
-				cmp #COLUBK,#BGOFFCOLOUR
+				lda CURRENTBG
+				cmp #BGOFFCOLOUR
 				beq DrawOnRoad
 				
 				; Set to off road colour
 				lda #BGOFFCOLOUR
 				sta COLUBK
+				sta CURRENTBG
 				jmp GetRoadCentre
 DrawOnRoad
 				; set to on-road colour
 				lda #BGONCOLOUR
 				sta COLUBK
+				sta CURRENTBG
 				
 GetRoadCentre
 				
-				lda #ROADCENTRE
+				lda ROADCENTRE
 				sta CURRENTROAD
 				
 				ldy #1 ; Now we're drawing the centre
@@ -158,19 +189,20 @@ GetRoadCentre
 				jmp NotRoad
 CentreDraw		
 
-				lda #ROADPATTERN
+				lda CURRENTPATTERN
 				sta PF0
 				sta PF1
 				sta PF2
 				
 				ldy #0 ; No Longer drawing the centre
 				
-				lda #ROADBOT
+				lda ROADBOT
 				sta CURRENTROAD
 				
 				lda #1
 				sta DRAWINGPF
 NotRoad
+				
 				dex
 				bne LVScan
 				

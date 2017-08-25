@@ -22,7 +22,7 @@ echo OutputModifer is %OutputModifer%
 echo IncludeModifer is %IncludeModifier%
 
 REM Use default if none provided
-set DefaultOutputName=Test
+set DefaultOutputName=ExampleProgram
 set OutputName=%DefaultOutputName%
 
 if NOT "%1"=="" set OutputName=%1

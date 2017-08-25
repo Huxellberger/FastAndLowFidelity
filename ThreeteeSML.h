@@ -2,6 +2,30 @@
 ; Macro Library for all the typical Macros you might want to use in a program
 ; Threetee Gang (C) 2017
 
+; Some notes about macros: . Signifies not to duplicate tag (e.g generates a new one for each use of the macros
+; Look at WSYNC_FOR to see how to handle errors
+
+; ------------------------------------------------------------------
+;				WSYNC_FOR
+; ------------------------------------------------------------------
+
+			;WSYNC for a number of cycles
+			MAC WSYNC_FOR
+.WSYNC_IT		SET {0}
+
+				IF .WSYNC_IT < 2
+					ECHO "MACRO ERROR: 'Should Be using for values > 1"
+					ERR
+				ENDIF
+				
+				ldx #.WSYNC_IT
+
+.WSYNC_DEL
+				sta WSYNC
+				dex
+				bne .WSYNC_DEL
+			ENDM
+
 ; ------------------------------------------------------------------
 ;				VSYNC_NTSC
 ; ------------------------------------------------------------------
@@ -29,14 +53,10 @@
 			; Account for 37 lines of VBLANK
 			MAC VBLANK_NTSC
 				; Enable VBLANK
-				ldx #37
 				lda #2
 				sta VBLANK
-.VBLANTSC		
-				; Wait it out
-				sta WSYNC
-				dex
-				bne .VBLANTSC
+
+				WSYNC_FOR 37
 				
 				; Shift right and use new value to disable
 				lsr
@@ -50,15 +70,10 @@
 			; Account for 30 lines of VBLANK (Overscan)
 			MAC OVERSCAN_NTSC
 				; Enable VBLANK
-				ldx #37
 				lda #2
 				sta VBLANK
 				
-.VOVERSC		
-				; Wait it out
-				sta WSYNC
-				dex
-				bne .VOVERSC
+				WSYNC_FOR 30
 				
 				; Shift right and use new value to disable
 				lsr

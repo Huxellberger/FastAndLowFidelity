@@ -28,8 +28,8 @@ ROADWIDTHHALF	= $84 ; Half of RoadWidth
 DRAWINGPF		= $85 ; Currently Drawing the playfield
 CURRENTROAD		= $86 ; Shadow of what a is holding when drawing the road
 CURRENTPATTERN	= $87 ; Current Road Pattern
-CURRENTBG		= $88 ; Current BG Colour
-CURRENTCYCLE	= $89 ; Current cycle of road
+CURRENTBG		= $89 ; Current BG Colour
+CURRENTCYCLE	= $90 ; Current cycle of road
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -37,12 +37,12 @@ CURRENTCYCLE	= $89 ; Current cycle of road
 
 BGOFFCOLOUR		= #$28 ; Dusty Desert
 BGONCOLOUR		= #$04 ; Dark Grey
-FGCOLOUR		= #$0E ; White
+ROADCOLOUR		= #$0E ; White
 ROADWIDTH		= #$50 ; Width of road
 SCREENHEIGHT	= #$c0 ; Screen Height (Should be changed on PAL)
-ROADCYCLE		= #$10 ; Frames before we cycle the road pattern
-ROADPATTERN		= #%00110011 ; Markings on the road default pattern
-ROADBOUNDRY		= #%11111111 ; Road Boundry
+ROADCYCLE		= #$06 ; Frames before we cycle the road pattern
+ROADPATTERN		= #%10101010 ; Markings on the road default pattern
+PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
 
 ; ------------------------------------------------------------------
 ;				System Reset
@@ -51,9 +51,17 @@ ROADBOUNDRY		= #%11111111 ; Road Boundry
 Start			
 				CLEAN_START
 				
+; ------------------------------------------------------------------
+;				Initialising The Game
+; ------------------------------------------------------------------
+				
 				; Setup initial road pattern
 				lda #ROADPATTERN
 				sta CURRENTPATTERN
+				
+				; load Playfield settings
+				lda #PFSETTINGS
+				sta CTRLPF
 				
 ; ------------------------------------------------------------------
 ; 				Handle VBLANK and VSYNC (NTSC)
@@ -72,7 +80,7 @@ NextFrame
 				lda #BGOFFCOLOUR
 				sta COLUBK
 				sta CURRENTBG
-				lda #FGCOLOUR
+				lda #ROADCOLOUR
 				sta COLUPF
 				
 				; Rotate road pattern if required (Gives illusion of movement)
@@ -82,8 +90,7 @@ NextFrame
 				
 				; If Equal to zero it's time to rotate the road!
 				lda CURRENTPATTERN
-				rol
-				adc #0 ; Don't lose carry bit
+				BITWISE_NOT
 				sta CURRENTPATTERN
 				
 				ldx #ROADCYCLE
@@ -129,12 +136,6 @@ PrepareLV
 				lda ROADTOP
 				sta CURRENTROAD
 				
-				lda #0
-				sta PF0
-				sta PF1
-				sta PF2
-				sta DRAWINGPF
-				
 				ldy #0 ; Using to say if we should draw the midpoint of the road
 LVScan
 				sta WSYNC
@@ -155,11 +156,6 @@ DrawLogic
 				; Draw the piece of the road
 				cpy #0
 				bne CentreDraw 
-				
-				lda #ROADBOUNDRY
-				sta PF0
-				sta PF1
-				sta PF2
 				
 				; if not the centre we change BG colour
 				lda CURRENTBG
@@ -182,16 +178,15 @@ GetRoadCentre
 				lda ROADCENTRE
 				sta CURRENTROAD
 				
-				ldy #1 ; Now we're drawing the centre
-				tya
-				sta DRAWINGPF
+				ldy #1
 				
 				jmp NotRoad
 CentreDraw		
-
-				lda CURRENTPATTERN
-				sta PF0
+				
+				lda CURRENTPATTERN ; Because load/store affects flags lots of duping done here...
 				sta PF1
+				BITWISE_NOT ; PF2 is reverse ordered to PF1 (as is PF0)
+				sta PF0
 				sta PF2
 				
 				ldy #0 ; No Longer drawing the centre

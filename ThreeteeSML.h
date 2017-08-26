@@ -81,3 +81,13 @@
 			ENDM
 			
 ; ------------------------------------------------------------------
+;				BITWISE_NOT
+; ------------------------------------------------------------------
+
+			; Use EOR for a bitwise not operation
+			; Sets value in acc to bitwise not of prior value
+			MAC BITWISE_NOT
+				eor #$FF
+			ENDM
+			
+; ------------------------------------------------------------------

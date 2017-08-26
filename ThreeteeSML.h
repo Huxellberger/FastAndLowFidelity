@@ -121,17 +121,12 @@
 .YMULVAL		SET {1}
 				
 				ldy #.YMULVAL
-.MULBRA
-				dey
-				beq .ODDMUL
-				asl
-				dey
-				beq .ENDMUL
-				jmp .MULBRA
-.ODDMUL			
+				sta .YMULVAL
 				clc
+.MULBRA
 				adc #.YMULVAL
-.ENDMUL
+				dey
+				bne .MULBRA
 			ENDM
 			
 ; ------------------------------------------------------------------

@@ -32,6 +32,7 @@ CURRENTPATTERN	= $87 ; Current Road Pattern
 CURRENTBG		= $89 ; Current BG Colour
 CURRENTCYCLE	= $90 ; Current cycle of road
 CURRENTLINE		= $91 ; CurrentScanline
+SPRITEY			= $92 ; Current YPos Of Sprite
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -47,7 +48,7 @@ ROADCYCLE		= #$06 ; Frames before we cycle the road pattern
 ROADPATTERN		= #%10101010 ; Markings on the road default pattern
 PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
 PLAYERSIZE		= #$08 ; Sprite size for main player
-SPRITEY			= #$70 ; Location of sprite on screen
+STARTSPRITEY	= #$70 ; Location of sprite on screen at start
 
 ;---Graphics Data for Player---
 
@@ -96,17 +97,17 @@ Start
 				lda #PFSETTINGS
 				sta CTRLPF
 				
+				ldy #STARTSPRITEY
+				sty SPRITEY
+				
 ; ------------------------------------------------------------------
 ; 				Handle VBLANK and VSYNC (NTSC)
 ; ------------------------------------------------------------------
 
 NextFrame		
 				VSYNC_NTSC
+				VBLANK_NTSC
 				
-				ENABLE_VBLANK
-				TIMER_SET_SCANLINE_DELAY_NTSC #VBLANKLINES
-				
-				; VBLANK BEGIN
 				; Set Background Colour
 				lda #BGOFFCOLOUR
 				sta COLUBK
@@ -117,6 +118,27 @@ NextFrame
 				; Reset sprite position
 				sta RESP0
 				
+				; HANDLE INPUT BEGIN
+CheckDown
+				ldy SPRITEY
+				lda SWCHA
+				tax
+				eor #%11011111
+				bne CheckUp
+				dey
+				jmp YPosWriteback
+CheckUp
+				txa
+				eor #%11101111
+				bne RotateRoad
+				iny
+				
+YPosWriteback
+				
+				sty SPRITEY
+				; HANDLE INPUT END
+				
+RotateRoad
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
 				dex
@@ -170,10 +192,6 @@ PrepareLV
 				lda ROADTOP
 				sta CURRENTROAD
 				ldy #PLAYERSIZE
-				; VBLANK END
-				
-				TIMER_WAIT
-				DISABLE_VBLANK
 				
 ; ------------------------------------------------------------------
 ;				Draw Playfield
@@ -183,6 +201,7 @@ PrepareLV
 LVScan
 				sta WSYNC
 				
+				; Stop drawing playfield if were previously
 				lda DRAWINGPF
 				cmp #1
 				bne DrawLogic
@@ -237,9 +256,10 @@ CentreDraw
 				sta DRAWINGPF
 NotRoad
 				
+				; BEGIN DRAWING SPRITES 
 				; Are we within sprite bounds?
 				stx CURRENTLINE
-				lda #SPRITEY
+				lda SPRITEY
 				sec
 				sbc CURRENTLINE
 				sec
@@ -260,6 +280,7 @@ ResetSpriteSize
 				ldy #PLAYERSIZE
 				
 				CLEAR_PLAYER_0
+				; END DRAWING SPRITES
 				
 EndScan
 				

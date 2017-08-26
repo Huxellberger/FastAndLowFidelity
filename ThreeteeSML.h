@@ -117,14 +117,19 @@
 			; buggers a bunch of register values so be prepared for that
 			; XInput is current acc value
 			; ouput is in acc
+			; if overflows that's stored in x
 			MAC MUL
 .YMULVAL		SET {1}
 				
+				ldx #0
 				ldy #.YMULVAL
 				sta .YMULVAL
 				clc
 .MULBRA
 				adc #.YMULVAL
+				bvc .MULNOOVER
+				inx
+.MULNOOVER
 				dey
 				bne .MULBRA
 			ENDM
@@ -137,15 +142,21 @@
 			; buggers a bunch of register values so be prepared for that
 			; X Input is current acc value
 			; ouput is in acc
+			; X is used as overflow count
 			MAC DIV_INT
 .YDIVVAL		SET {1}
-				
-.DIVBRA
+
 				ldy #0
 				sec
+.DIVBRA
 				sbc #.YDIVVAL
 				iny
-				bcc .DIVBRA
+				bpl .DIVBRA
+				cpx #0
+				beq .DIVEND
+				dex
+				jmp DIVBRA
+.DIVEND
 				tya
 			ENDM
 			
@@ -179,7 +190,6 @@
 				
 				lda #.NUM_SCANLINES
 				MUL #76
-				clc
 				adc #13
 				DIV_INT #64
 				

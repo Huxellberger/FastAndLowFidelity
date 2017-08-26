@@ -1,6 +1,7 @@
 ; Toretto V0.1
 ; Threetee Gang (C) 2017
 ; NTSC Version
+; Graphics Data Generated via PlayerPal v2.1 (AlienBill.com/2600/PlayerPalNext.html)
 
 				processor 6502
 	
@@ -30,6 +31,7 @@ CURRENTROAD		= $86 ; Shadow of what a is holding when drawing the road
 CURRENTPATTERN	= $87 ; Current Road Pattern
 CURRENTBG		= $89 ; Current BG Colour
 CURRENTCYCLE	= $90 ; Current cycle of road
+CURRENTLINE		= $91 ; CurrentScanline
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -43,6 +45,36 @@ SCREENHEIGHT	= #$c0 ; Screen Height (Should be changed on PAL)
 ROADCYCLE		= #$06 ; Frames before we cycle the road pattern
 ROADPATTERN		= #%10101010 ; Markings on the road default pattern
 PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
+PLAYERSIZE		= #$08 ; Sprite size for main player
+SPRITEY			= #$70 ; Location of sprite on screen
+
+;---Graphics Data for Player---
+
+PlayerFrame0
+        .byte #%01100110;$0C
+        .byte #%01100110;$0C
+        .byte #%11111111;$00
+        .byte #%01111111;$0E
+        .byte #%01111111;$00
+        .byte #%01111000;$00
+        .byte #%00000000;$00
+        .byte #%00000000;$00
+;---End Graphics Data---
+
+
+;---Colour Data for Player---
+
+PlayerColourFrame0
+        .byte #$0C;
+        .byte #$0C;
+        .byte #$00;
+        .byte #$0E;
+        .byte #$00;
+        .byte #$00;
+        .byte #$00;
+        .byte #$00;
+;---End Colour Data---
+
 
 ; ------------------------------------------------------------------
 ;				System Reset
@@ -82,6 +114,12 @@ NextFrame
 				sta CURRENTBG
 				lda #ROADCOLOUR
 				sta COLUPF
+				
+				sta RESP0
+				
+				lda #0
+				sta GRP0
+				sta COLUP0
 				
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
@@ -135,8 +173,8 @@ SetupRoadside
 PrepareLV		
 				lda ROADTOP
 				sta CURRENTROAD
+				ldy #PLAYERSIZE
 				
-				ldy #0 ; Using to say if we should draw the midpoint of the road
 LVScan
 				sta WSYNC
 				
@@ -154,8 +192,8 @@ DrawLogic
 				bne NotRoad
 				
 				; Draw the piece of the road
-				cpy #0
-				bne CentreDraw 
+				cmp ROADCENTRE
+				beq CentreDraw 
 				
 				; if not the centre we change BG colour
 				lda CURRENTBG
@@ -178,8 +216,6 @@ GetRoadCentre
 				lda ROADCENTRE
 				sta CURRENTROAD
 				
-				ldy #1
-				
 				jmp NotRoad
 CentreDraw		
 				
@@ -189,14 +225,40 @@ CentreDraw
 				sta PF0
 				sta PF2
 				
-				ldy #0 ; No Longer drawing the centre
-				
 				lda ROADBOT
 				sta CURRENTROAD
 				
 				lda #1
 				sta DRAWINGPF
 NotRoad
+				
+				; Are we within sprite bounds?
+				stx CURRENTLINE
+				lda #SPRITEY
+				sec
+				sbc CURRENTLINE
+				sec
+				sbc #PLAYERSIZE
+				bcs EndScan
+				
+				; Draw a line of the sprite
+				dey 
+				beq ResetSpriteSize
+				lda PlayerFrame0,y
+				sta GRP0
+				lda PlayerColourFrame0,y
+				sta COLUP0
+				jmp EndScan
+				
+ResetSpriteSize
+				
+				ldy #PLAYERSIZE
+				
+				lda #0
+				sta GRP0
+				sta COLUP0
+				
+EndScan
 				
 				dex
 				bne LVScan

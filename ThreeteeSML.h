@@ -124,8 +124,8 @@
 				ldx #0
 				ldy #.YMULVAL
 				sta .YMULVAL
-				clc
 .MULBRA
+				clc
 				adc #.YMULVAL
 				bvc .MULNOOVER
 				inx
@@ -147,15 +147,15 @@
 .YDIVVAL		SET {1}
 
 				ldy #0
-				sec
 .DIVBRA
-				sbc #.YDIVVAL
 				iny
+				sec
+				sbc #.YDIVVAL
 				bpl .DIVBRA
 				cpx #0
 				beq .DIVEND
 				dex
-				jmp DIVBRA
+				jmp .DIVBRA
 .DIVEND
 				tya
 			ENDM
@@ -180,6 +180,7 @@
 			; Needs pairing with TIMER_WAIT at the end
 			; Formula used is (N*76 + 13)/64 (64 cycle timer, 13 cycles to use timer and N is number of scanlines)
 			; 76 is the cycles for a normal scanline to complete
+			; should be 44 for NTSC VBLANK
 			MAC TIMER_SET_SCANLINE_DELAY_NTSC
 .NUM_SCANLINES	SET {0}
 

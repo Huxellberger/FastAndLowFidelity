@@ -106,7 +106,10 @@ Start
 
 NextFrame		
 				VSYNC_NTSC
-				VBLANK_NTSC
+				;VBLANK_NTSC
+				
+				ENABLE_VBLANK
+				TIMER_SET_SCANLINE_DELAY_NTSC #VBLANKLINES
 				
 				; Set Background Colour
 				lda #BGOFFCOLOUR
@@ -192,6 +195,9 @@ PrepareLV
 				lda ROADTOP
 				sta CURRENTROAD
 				ldy #PLAYERSIZE
+				
+				TIMER_WAIT
+				DISABLE_VBLANK
 				
 ; ------------------------------------------------------------------
 ;				Draw Playfield

@@ -47,18 +47,37 @@
 			ENDM
 			
 ; ------------------------------------------------------------------
+;				ENABLE_VBLANK
+; ------------------------------------------------------------------
+
+			; Enable VBLANK
+			MAC ENABLE_VBLANK
+				lda #2
+				sta VBLANK
+			ENDM
+			
+; ------------------------------------------------------------------
+;				DISABLE_VBLANK
+; ------------------------------------------------------------------
+
+			; Disable VBLANK
+			MAC DISABLE_VBLANK
+				lda #1
+				sta VBLANK
+			ENDM
+			
+; ------------------------------------------------------------------
 ;				VBLANK_NTSC
 ; ------------------------------------------------------------------
 
 			; Account for 37 lines of VBLANK
 			MAC VBLANK_NTSC
-				; Enable VBLANK
-				lda #2
-				sta VBLANK
+				ENABLE_VBLANK
 
 				WSYNC_FOR 37
 				
 				; Shift right and use new value to disable
+				; know a is 2 from enable
 				lsr
 				sta VBLANK
 			ENDM
@@ -91,6 +110,51 @@
 			ENDM
 			
 ; ------------------------------------------------------------------
+;				MUL
+; ------------------------------------------------------------------
+
+			; Function to multiply two numbers
+			; buggers a bunch of register values so be prepared for that
+			; XInput is current acc value
+			; ouput is in acc
+			MAC MUL
+.YMULVAL		SET {1}
+				
+				ldy #.YMULVAL
+.MULBRA
+				dey
+				beq .ODDMUL
+				asl
+				dey
+				beq .ENDMUL
+				jmp .MULBRA
+.ODDMUL			
+				clc
+				adc #.YMULVAL
+.ENDMUL
+			ENDM
+			
+; ------------------------------------------------------------------
+;				DIV_INT
+; ------------------------------------------------------------------
+
+			; Function to divide two numbers
+			; buggers a bunch of register values so be prepared for that
+			; X Input is current acc value
+			; ouput is in acc
+			MAC DIV_INT
+.YDIVVAL		SET {1}
+				
+.DIVBRA
+				ldy #0
+				sec
+				sbc #.YDIVVAL
+				iny
+				bcc .DIVBRA
+				tya
+			ENDM
+			
+; ------------------------------------------------------------------
 ;				CLEAR_PLAYER_0
 ; ------------------------------------------------------------------
 
@@ -99,6 +163,43 @@
 				lda #0
 				sta GRP0
 				sta	COLUP0
+			ENDM
+			
+; ------------------------------------------------------------------
+;				TIMER_SET_SCANLINE_DELAY_NTSC
+; ------------------------------------------------------------------
+
+			; Macro to delay for a certain number of Scanlines
+			; Can be used to execute logic in VBLANK and overscan before we need to drawing
+			; Needs pairing with TIMER_WAIT at the end
+			; Formula used is (N*76 + 13)/64 (64 cycle timer, 13 cycles to use timer and N is number of scanlines)
+			; 76 is the cycles for a normal scanline to complete
+			MAC TIMER_SET_SCANLINE_DELAY_NTSC
+.NUM_SCANLINES	SET {0}
+
+				IF .NUM_SCANLINES < 2
+					ECHO "MACRO ERROR: 'Just use WSYNC for values less than 2!"
+					ERR
+				ENDIF
+				
+				lda #.NUM_SCANLINES
+				MUL #76
+				clc
+				adc #13
+				DIV_INT #64
+				
+				sta TIM64T
+			ENDM
+			
+; ------------------------------------------------------------------
+;				TIMER_WAIT
+; ------------------------------------------------------------------
+
+			; Macro to wait for timer delay to run down
+			MAC TIMER_WAIT
+.TIMERWAITCONT
+				lda INTIM
+				bne .TIMERWAITCONT
 			ENDM
 			
 ; ------------------------------------------------------------------

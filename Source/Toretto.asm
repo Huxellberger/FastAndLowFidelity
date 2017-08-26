@@ -42,6 +42,7 @@ BGONCOLOUR		= #$04 ; Dark Grey
 ROADCOLOUR		= #$0E ; White
 ROADWIDTH		= #$50 ; Width of road
 SCREENHEIGHT	= #$c0 ; Screen Height (Should be changed on PAL)
+VBLANKLINES		= #$25 ; Number of lines of VBLANK (Change on PAL)
 ROADCYCLE		= #$06 ; Frames before we cycle the road pattern
 ROADPATTERN		= #%10101010 ; Markings on the road default pattern
 PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
@@ -101,13 +102,11 @@ Start
 
 NextFrame		
 				VSYNC_NTSC
-				VBLANK_NTSC
 				
-; ------------------------------------------------------------------
-;				Draw Playfield
-; ------------------------------------------------------------------
+				ENABLE_VBLANK
+				TIMER_SET_SCANLINE_DELAY_NTSC #VBLANKLINES
 				
-				; 192 visible scanlines make up our frame on NTSC
+				; VBLANK BEGIN
 				; Set Background Colour
 				lda #BGOFFCOLOUR
 				sta COLUBK
@@ -115,6 +114,7 @@ NextFrame
 				lda #ROADCOLOUR
 				sta COLUPF
 				
+				; Reset sprite position
 				sta RESP0
 				
 				; Rotate road pattern if required (Gives illusion of movement)
@@ -170,6 +170,15 @@ PrepareLV
 				lda ROADTOP
 				sta CURRENTROAD
 				ldy #PLAYERSIZE
+				; VBLANK END
+				
+				TIMER_WAIT
+				DISABLE_VBLANK
+				
+; ------------------------------------------------------------------
+;				Draw Playfield
+; ------------------------------------------------------------------
+				
 				
 LVScan
 				sta WSYNC

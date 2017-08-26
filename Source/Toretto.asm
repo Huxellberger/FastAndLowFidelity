@@ -117,10 +117,6 @@ NextFrame
 				
 				sta RESP0
 				
-				lda #0
-				sta GRP0
-				sta COLUP0
-				
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
 				dex
@@ -254,9 +250,7 @@ ResetSpriteSize
 				
 				ldy #PLAYERSIZE
 				
-				lda #0
-				sta GRP0
-				sta COLUP0
+				CLEAR_PLAYER_0
 				
 EndScan
 				

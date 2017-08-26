@@ -172,6 +172,18 @@
 			ENDM
 			
 ; ------------------------------------------------------------------
+;				TIMER_SET_DELAY
+; ------------------------------------------------------------------
+
+			; Macro to set delay
+			MAC TIMER_SET_DELAY
+.TIMSETDEL		SET {0}
+
+				lda #.TIMSETDEL
+				sta TIM64T
+			ENDM
+			
+; ------------------------------------------------------------------
 ;				TIMER_SET_SCANLINE_DELAY_NTSC_CALC
 ; ------------------------------------------------------------------
 
@@ -204,8 +216,7 @@
 			; Cheekily sets delay required for VBLANK
 			; should be 43 for NTSC VBLANK
 			MAC TIMER_SET_SCANLINE_DELAY_NTSC_VBLANK
-				lda #43
-				sta TIM64T
+				TIMER_SET_DELAY #43
 			ENDM
 			
 ; ------------------------------------------------------------------
@@ -215,8 +226,7 @@
 			; Cheekily sets delay required for Overscan
 			; should be 35 for NTSC Overscan
 			MAC TIMER_SET_SCANLINE_DELAY_NTSC_OVERSCAN
-				lda #35
-				sta TIM64T
+				TIMER_SET_DELAY #35
 			ENDM
 			
 ; ------------------------------------------------------------------

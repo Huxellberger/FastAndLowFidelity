@@ -172,7 +172,7 @@
 			ENDM
 			
 ; ------------------------------------------------------------------
-;				TIMER_SET_SCANLINE_DELAY_NTSC
+;				TIMER_SET_SCANLINE_DELAY_NTSC_CALC
 ; ------------------------------------------------------------------
 
 			; Macro to delay for a certain number of Scanlines
@@ -180,8 +180,8 @@
 			; Needs pairing with TIMER_WAIT at the end
 			; Formula used is (N*76 + 13)/64 (64 cycle timer, 13 cycles to use timer and N is number of scanlines)
 			; 76 is the cycles for a normal scanline to complete
-			; should be 44 for NTSC VBLANK
-			MAC TIMER_SET_SCANLINE_DELAY_NTSC
+			; should be 43 for NTSC VBLANK
+			MAC TIMER_SET_SCANLINE_DELAY_NTSC_CALC
 .NUM_SCANLINES	SET {0}
 
 				IF .NUM_SCANLINES < 2
@@ -194,6 +194,28 @@
 				adc #13
 				DIV_INT #64
 				
+				sta TIM64T
+			ENDM
+			
+; ------------------------------------------------------------------
+;				TIMER_SET_SCANLINE_DELAY_NTSC_VBLANK
+; ------------------------------------------------------------------
+
+			; Cheekily sets delay required for VBLANK
+			; should be 43 for NTSC VBLANK
+			MAC TIMER_SET_SCANLINE_DELAY_NTSC_VBLANK
+				lda #43
+				sta TIM64T
+			ENDM
+			
+; ------------------------------------------------------------------
+;				TIMER_SET_SCANLINE_DELAY_NTSC_OVERSCAN
+; ------------------------------------------------------------------
+
+			; Cheekily sets delay required for Overscan
+			; should be 35 for NTSC Overscan
+			MAC TIMER_SET_SCANLINE_DELAY_NTSC_OVERSCAN
+				lda #35
 				sta TIM64T
 			ENDM
 			

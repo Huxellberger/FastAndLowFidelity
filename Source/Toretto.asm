@@ -106,10 +106,9 @@ Start
 
 NextFrame		
 				VSYNC_NTSC
-				;VBLANK_NTSC
 				
 				ENABLE_VBLANK
-				TIMER_SET_SCANLINE_DELAY_NTSC #VBLANKLINES
+				TIMER_SET_SCANLINE_DELAY_NTSC_VBLANK
 				
 				; Set Background Colour
 				lda #BGOFFCOLOUR
@@ -297,7 +296,10 @@ EndScan
 ;				Handle Overscan (NTSC)
 ; ------------------------------------------------------------------
 				
-				OVERSCAN_NTSC
+				ENABLE_VBLANK
+				TIMER_SET_SCANLINE_DELAY_NTSC_OVERSCAN
+				; Overscan logic
+				DISABLE_VBLANK
 				
 ; ------------------------------------------------------------------
 ;				Loop Back around!				

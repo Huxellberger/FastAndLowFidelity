@@ -168,8 +168,7 @@ PrepareLV
 ; ------------------------------------------------------------------
 ;				Draw Playfield
 ; ------------------------------------------------------------------
-				
-				
+						
 LVScan
 				sta WSYNC
 				
@@ -178,8 +177,26 @@ LVScan
 				sta PF0
 				sta PF1
 				sta PF2
+				
+				; BEGIN DRAWING SPRITES 
+				; Are we within sprite bounds?
+				stx CURRENTLINE
+				lda SPRITEY
+				sec
+				sbc CURRENTLINE
+				tay
+				sbc #PLAYERSIZE
+				bcs DrawLogic
+				
+				lda SPRITEX
+				jsr SetSpriteX
+				
+				lda PlayerFrame0,y
+				sta GRP0
+				lda PlayerColourFrame0,y
+				sta COLUP0	
 DrawLogic
-				txa
+				txa 
 				cmp	CURRENTROAD
 				bne NotRoad
 				
@@ -204,7 +221,6 @@ DrawOnRoad
 				sta CURRENTBG
 				
 GetRoadCentre
-				
 				lda ROADCENTRE
 				sta CURRENTROAD
 				
@@ -220,38 +236,8 @@ CentreDraw
 				lda ROADBOT
 				sta CURRENTROAD
 NotRoad
-				
-				; BEGIN DRAWING SPRITES 
-				; Are we within sprite bounds?
-				stx CURRENTLINE
-				lda SPRITEY
-				sec
-				sbc CURRENTLINE
-				sec
-				sbc #PLAYERSIZE
-				bcs EndScan
-				
-				; Draw a line of the sprite, after getting to correct XPos
-				dey 
-				beq ResetSpriteSize
-				
-				lda SPRITEX
-				jsr SetSpriteX
-				lda PlayerFrame0,y
-				sta GRP0
-				lda PlayerColourFrame0,y
-				sta COLUP0
-				jmp EndScan
-				
-ResetSpriteSize
-				
-				ldy #PLAYERSIZE
-				
-				CLEAR_PLAYER_0
-				; END DRAWING SPRITES
-				
+
 EndScan
-				
 				dex
 				bne LVScan
 				
@@ -286,7 +272,7 @@ SetSpriteX 		subroutine
 .DivideLoop
 				sbc #15 ; number of tv cycles during instruction
 				bcs .DivideLoop
-				eor #7 ; fine offset, (so we can move in smaller than 15 pixel increments
+				eor #7 ; fine offset, (so we can move in smaller than 15 pixel increments)
 				asl
 				asl
 				asl

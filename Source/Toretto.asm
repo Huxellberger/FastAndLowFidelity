@@ -177,24 +177,6 @@ LVScan
 				sta PF0
 				sta PF1
 				sta PF2
-				
-				; BEGIN DRAWING SPRITES 
-				; Are we within sprite bounds?
-				stx CURRENTLINE
-				lda SPRITEY
-				sec
-				sbc CURRENTLINE
-				tay
-				sbc #PLAYERSIZE
-				bcs DrawLogic
-				
-				lda SPRITEX
-				jsr SetSpriteX
-				
-				lda PlayerFrame0,y
-				sta GRP0
-				lda PlayerColourFrame0,y
-				sta COLUP0	
 DrawLogic
 				txa 
 				cmp	CURRENTROAD
@@ -236,6 +218,26 @@ CentreDraw
 				lda ROADBOT
 				sta CURRENTROAD
 NotRoad
+				; Are we within sprite bounds?
+				sta WSYNC ; Split draw over two scanlines so we have time for it all
+				dex
+				
+				stx CURRENTLINE
+				lda SPRITEY
+				sec
+				sbc CURRENTLINE
+				tay
+				sbc #PLAYERSIZE
+				bcs EndScan
+				
+				lda SPRITEX
+				jsr SetSpriteX
+				
+				; Sync and store sprite values
+				lda PlayerFrame0,y
+				sta GRP0
+				lda PlayerColourFrame0,y
+				sta COLUP0	
 
 EndScan
 				dex

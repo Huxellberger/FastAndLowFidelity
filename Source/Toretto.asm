@@ -134,42 +134,10 @@ NextFrame
 				sta COLUPF
 				
 				; Reset sprite position
-				;sta RESP0
 				sta HMOVE
 				
-				; HANDLE INPUT BEGIN
-CheckDown
-				ldy SPRITEY
-				lda SWCHA
-				tax
-				eor #%11011111
-				bne CheckUp
-				dey
-				jmp YPosWriteback
-CheckUp
-				txa
-				eor #%11101111
-				bne CheckRight
-				iny
-				
-YPosWriteback
-				
-				sty SPRITEY
-				
-CheckRight		
-				ldx SPRITEX
-				bit SWCHA
-				bvs CheckLeft
-				dex
-				
-CheckLeft
-				bit SWCHA
-				bmi XPosWriteback
-				inx
-				
-XPosWriteback
-				stx SPRITEX
-				; HANDLE INPUT END
+				; Handle Input
+				jsr HandleInput
 				
 RotateRoad
 				; Rotate road pattern if required (Gives illusion of movement)
@@ -352,6 +320,43 @@ InitialiseRoad	subroutine
 				sta ROADBOT,x
 				rts
 				
+; ------------------------------------------------------------------
+;				HandleInput			
+; ------------------------------------------------------------------
+
+				; Function to handle all the inputs in a standard Toretto Game
+HandleInput		subroutine
+
+CheckDown
+				ldy SPRITEY
+				lda SWCHA
+				tax
+				eor #%11011111
+				bne CheckUp
+				dey
+				jmp YPosWriteback
+CheckUp
+				txa
+				eor #%11101111
+				bne CheckRight
+				iny
+				
+YPosWriteback
+				sty SPRITEY
+				
+CheckRight		
+				ldx SPRITEX
+				bit SWCHA ; right and left stored in the top two bits so can be cheeky like this
+				bvs CheckLeft
+				dex
+CheckLeft
+				bit SWCHA
+				bmi XPosWriteback
+				inx
+				
+XPosWriteback
+				stx SPRITEX
+				rts
 				
 ; ------------------------------------------------------------------
 ;				Interrupt Vector Definitions

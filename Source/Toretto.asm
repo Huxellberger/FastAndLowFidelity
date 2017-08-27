@@ -33,6 +33,8 @@ CURRENTBG		= $89 ; Current BG Colour
 CURRENTCYCLE	= $90 ; Current cycle of road
 CURRENTLINE		= $91 ; CurrentScanline
 SPRITEY			= $92 ; Current YPos Of Sprite
+SPRITEX			= $93 ; Current XPos Of Sprite
+CURRENTDRAW		= $94 ; Current Sprite being drawn
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -49,6 +51,7 @@ ROADPATTERN		= #%10101010 ; Markings on the road default pattern
 PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
 PLAYERSIZE		= #$08 ; Sprite size for main player
 STARTSPRITEY	= #$70 ; Location of sprite on screen at start
+STARTSPRITEX	= #$0F ; Location of sprite on screen at start
 
 ;---Graphics Data for Player---
 
@@ -97,8 +100,12 @@ Start
 				lda #PFSETTINGS
 				sta CTRLPF
 				
+				; Set Initial sprite position
 				ldy #STARTSPRITEY
 				sty SPRITEY
+				
+				ldx #STARTSPRITEX
+				stx SPRITEX
 				
 ; ------------------------------------------------------------------
 ; 				Handle VBLANK and VSYNC (NTSC)
@@ -118,7 +125,8 @@ NextFrame
 				sta COLUPF
 				
 				; Reset sprite position
-				sta RESP0
+				;sta RESP0
+				sta HMOVE
 				
 				; HANDLE INPUT BEGIN
 CheckDown
@@ -132,12 +140,26 @@ CheckDown
 CheckUp
 				txa
 				eor #%11101111
-				bne RotateRoad
+				bne CheckRight
 				iny
 				
 YPosWriteback
 				
 				sty SPRITEY
+				
+CheckRight		
+				ldx SPRITEX
+				bit SWCHA
+				bvs CheckLeft
+				dex
+				
+CheckLeft
+				bit SWCHA
+				bmi XPosWriteback
+				inx
+				
+XPosWriteback
+				stx SPRITEX
 				; HANDLE INPUT END
 				
 RotateRoad
@@ -271,9 +293,12 @@ NotRoad
 				sbc #PLAYERSIZE
 				bcs EndScan
 				
-				; Draw a line of the sprite
+				; Draw a line of the sprite, after getting to correct XPos
 				dey 
 				beq ResetSpriteSize
+				
+				lda SPRITEX
+				jsr SetSpriteX
 				lda PlayerFrame0,y
 				sta GRP0
 				lda PlayerColourFrame0,y
@@ -306,6 +331,27 @@ EndScan
 ; ------------------------------------------------------------------
 
 				jmp NextFrame
+				
+; ------------------------------------------------------------------
+;				Subroutines				
+; ------------------------------------------------------------------
+
+				; Set Horizontal position subroutine, use to set sprite's x pos to correct value
+				; INPUT: A is desired X coordinate of object, CURRENTDRAW
+				; e.g DRAW = 0 is Player0, DRAW = 1 is player 2, using offset addressing.
+SetSpriteX 		subroutine
+				sec
+.DivideLoop
+				sbc #15 ; number of tv cycles during instruction
+				bcs .DivideLoop
+				eor #7 ; fine offset, (so we can move in smaller than 15 pixel increments
+				asl
+				asl
+				asl
+				asl
+				sta HMP0, #CURRENTDRAW
+				sta RESP0, #CURRENTDRAW
+				rts
 				
 ; ------------------------------------------------------------------
 ;				Interrupt Vector Definitions

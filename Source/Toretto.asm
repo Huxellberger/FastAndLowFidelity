@@ -24,9 +24,7 @@
 ROADTOP			= $80 ; Top of road
 ROADBOT			= $81 ; Bottom of road
 ROADCENTRE		= $82 ; Centre line of road
-ROADCALC		= $83 ; Have we calculated the road?
 ROADWIDTHHALF	= $84 ; Half of RoadWidth
-DRAWINGPF		= $85 ; Currently Drawing the playfield
 CURRENTROAD		= $86 ; Shadow of what a is holding when drawing the road
 CURRENTPATTERN	= $87 ; Current Road Pattern
 CURRENTBG		= $89 ; Current BG Colour
@@ -107,6 +105,17 @@ Start
 				ldx #STARTSPRITEX
 				stx SPRITEX
 				
+				; Calcuate where the boundries to the road should be drawn
+				lda #SCREENHEIGHT
+				lsr
+				sta ROADCENTRE
+				tay ; Can be used later! 
+				
+				; Work out max / 2
+				lda #ROADWIDTH
+				ldx #0
+				jsr InitialiseRoad
+				
 ; ------------------------------------------------------------------
 ; 				Handle VBLANK and VSYNC (NTSC)
 ; ------------------------------------------------------------------
@@ -166,7 +175,7 @@ RotateRoad
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
 				dex
-				bne SetupRoadside
+				bne PrepareLV
 				
 				; If Equal to zero it's time to rotate the road!
 				lda CURRENTPATTERN
@@ -175,44 +184,12 @@ RotateRoad
 				
 				ldx #ROADCYCLE
 				
-SetupRoadside
-				
+PrepareLV	
 				stx CURRENTCYCLE
 				
 				; Draw Playfield begin
 				ldx #SCREENHEIGHT
-				
-				; Only Calculate road boundries if first time
-				lda ROADCALC
-				cmp #0
-				bne PrepareLV
-				
-				; Calcuate where the boundries to the road should be drawn
-				txa
-				lsr
-				sta ROADCENTRE
-				tay ; Can be used later! 
-				
-				; Work out max / 2
-				lda #ROADWIDTH
-				lsr
-				sta ROADWIDTHHALF
-				
-				; Now we know outside edge will be midpoint + (max / 2)
-				tya
-				clc
-				adc ROADWIDTHHALF
-				sta ROADTOP
-				
-				tya
-				sec
-				sbc ROADWIDTHHALF
-				sta ROADBOT
-				
-				; Make sure we never do that again
-				lda #1
-				sta ROADCALC
-PrepareLV		
+					
 				lda ROADTOP
 				sta CURRENTROAD
 				ldy #PLAYERSIZE
@@ -228,15 +205,11 @@ PrepareLV
 LVScan
 				sta WSYNC
 				
-				; Stop drawing playfield if were previously
-				lda DRAWINGPF
-				cmp #1
-				bne DrawLogic
+				; Reset Drawing of playfield
 				lda #0
 				sta PF0
 				sta PF1
 				sta PF2
-				sta DRAWINGPF
 DrawLogic
 				txa
 				cmp	CURRENTROAD
@@ -278,9 +251,6 @@ CentreDraw
 				
 				lda ROADBOT
 				sta CURRENTROAD
-				
-				lda #1
-				sta DRAWINGPF
 NotRoad
 				
 				; BEGIN DRAWING SPRITES 
@@ -336,6 +306,10 @@ EndScan
 ;				Subroutines				
 ; ------------------------------------------------------------------
 
+; ------------------------------------------------------------------
+;				SetSpriteX				
+; ------------------------------------------------------------------
+
 				; Set Horizontal position subroutine, use to set sprite's x pos to correct value
 				; INPUT: A is desired X coordinate of object, CURRENTDRAW
 				; e.g DRAW = 0 is Player0, DRAW = 1 is player 2, using offset addressing.
@@ -352,6 +326,32 @@ SetSpriteX 		subroutine
 				sta HMP0, #CURRENTDRAW
 				sta RESP0, #CURRENTDRAW
 				rts
+				
+; ------------------------------------------------------------------
+;				InitialiseRoad			
+; ------------------------------------------------------------------
+
+				; SetInitialRoad position
+				; Calculate where all the road boundries should be based on Initial height
+				; First bit will be repeated for multiple roads but it's not a big deal right now
+				; A is road width, x is the offset to store to and y is the midpoint
+InitialiseRoad	subroutine
+				
+				lsr
+				sta ROADWIDTHHALF,x
+				
+				; Now we know outside edge will be midpoint + (max / 2)
+				tya
+				clc
+				adc ROADWIDTHHALF,x
+				sta ROADTOP,x
+				
+				tya
+				sec
+				sbc ROADWIDTHHALF,x
+				sta ROADBOT,x
+				rts
+				
 				
 ; ------------------------------------------------------------------
 ;				Interrupt Vector Definitions

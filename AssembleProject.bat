@@ -30,7 +30,7 @@ if NOT "%1"=="" set OutputName=%1
 echo Using output prefix of %OutputName%
 
 REM Run DASM
-set Command=%DASMPath% %SourceDir%%OutputName%.asm  %LogModifer%%OutputDir%%OutputName%.txt %DefaultArgs% %OutputModifer%%OutputDir%%OutputName%.bin
+set Command=%DASMPath% %SourceDir%%OutputName%.asm  %LogModifer%%OutputDir%%OutputName%.txt %DefaultArgs% %OutputModifer%%OutputDir%%OutputName%.bin -DNO_ILLEGAL_OPCODES=1
 
 echo command call looks like %Command%
 

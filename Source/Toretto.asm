@@ -32,7 +32,6 @@ CURRENTCYCLE	= $90 ; Current cycle of road
 CURRENTLINE		= $91 ; CurrentScanline
 SPRITEY			= $92 ; Current YPos Of Sprite
 SPRITEX			= $93 ; Current XPos Of Sprite
-CURRENTDRAW		= $94 ; Current Sprite being drawn
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -54,29 +53,29 @@ STARTSPRITEX	= #$0F ; Location of sprite on screen at start
 ;---Graphics Data for Player---
 
 PlayerFrame0
-        .byte #%01100110;$0C
-        .byte #%01100110;$0C
-        .byte #%11111111;$00
-        .byte #%01111111;$0E
+        .byte #%01100110;$02
+        .byte #%01100110;$02
         .byte #%01111111;$00
-        .byte #%01111000;$00
-        .byte #%00000000;$00
-        .byte #%00000000;$00
+        .byte #%01111111;$00
+        .byte #%01111111;$0E
+        .byte #%01111111;$0E
+        .byte #%00111100;$00
+        .byte #%00111100;$00
 ;---End Graphics Data---
 
 
-;---Colour Data for Player---
+;---Color Data for Player---
 
 PlayerColourFrame0
-        .byte #$0C;
-        .byte #$0C;
+        .byte #$02;
+        .byte #$02;
         .byte #$00;
+        .byte #$00;
+        .byte #$0E;
         .byte #$0E;
         .byte #$00;
         .byte #$00;
-        .byte #$00;
-        .byte #$00;
-;---End Colour Data---
+;---End Color Data---
 
 
 ; ------------------------------------------------------------------
@@ -133,7 +132,13 @@ NextFrame
 				lda #ROADCOLOUR
 				sta COLUPF
 				
+				; Set new sprite position
+				lda SPRITEX
+				ldx #0
+				jsr SetSpriteX
+				
 				; Reset sprite position
+				sta WSYNC
 				sta HMOVE
 				
 				; Handle Input
@@ -163,7 +168,11 @@ PrepareLV
 				ldy #PLAYERSIZE
 				
 				TIMER_WAIT
+				
+				; Make sure kernal draw loop starts at the correct time
+				sta WSYNC
 				DISABLE_VBLANK
+				SLEEP #31
 				
 ; ------------------------------------------------------------------
 ;				Draw Playfield
@@ -218,26 +227,8 @@ CentreDraw
 				lda ROADBOT
 				sta CURRENTROAD
 NotRoad
-				; Are we within sprite bounds?
-				sta WSYNC ; Split draw over two scanlines so we have time for it all
-				dex
-				
-				stx CURRENTLINE
-				lda SPRITEY
-				sec
-				sbc CURRENTLINE
-				tay
-				sbc #PLAYERSIZE
-				bcs EndScan
-				
-				lda SPRITEX
-				jsr SetSpriteX
-				
-				; Sync and store sprite values
-				lda PlayerFrame0,y
-				sta GRP0
-				lda PlayerColourFrame0,y
-				sta COLUP0	
+
+				jsr DrawSprite
 
 EndScan
 				dex
@@ -263,13 +254,44 @@ EndScan
 ; ------------------------------------------------------------------
 
 ; ------------------------------------------------------------------
+;				DrawSprite				
+; ------------------------------------------------------------------
+
+				; Draw a sprite at a given offset.
+				; A is Y position of sprite, x is current Scanline
+				; y is the line offset
+DrawSprite		subroutine
+				
+				; Are we within sprite bounds?
+				stx CURRENTLINE
+				lda SPRITEY
+				sec
+				sbc CURRENTLINE
+				tay
+				sbc #PLAYERSIZE
+				bcc .SpriteDrawVal 
+				rts
+				
+				; Sync and store sprite values
+.SpriteDrawVal	
+				sta WSYNC
+				lda PlayerFrame0,y
+				sta GRP0
+				lda PlayerColourFrame0,y
+				sta COLUP0
+				dex
+				rts				
+
+; ------------------------------------------------------------------
 ;				SetSpriteX				
 ; ------------------------------------------------------------------
 
 				; Set Horizontal position subroutine, use to set sprite's x pos to correct value
-				; INPUT: A is desired X coordinate of object, CURRENTDRAW
+				; INPUT: A is desired X coordinate of object, x is current sprite by offset
 				; e.g DRAW = 0 is Player0, DRAW = 1 is player 2, using offset addressing.
 SetSpriteX 		subroutine
+				sta WSYNC ; Start a new line for right offset
+				bit 0 ; waste 3 cycles of HBLANK
 				sec
 .DivideLoop
 				sbc #15 ; number of tv cycles during instruction
@@ -279,8 +301,8 @@ SetSpriteX 		subroutine
 				asl
 				asl
 				asl
-				sta HMP0, #CURRENTDRAW
-				sta RESP0, #CURRENTDRAW
+				sta HMP0,x ; Course position
+				sta RESP0,x ; Fine offset
 				rts
 				
 ; ------------------------------------------------------------------

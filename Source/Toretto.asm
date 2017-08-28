@@ -34,6 +34,8 @@ CURRENTLINE		byte ; CurrentScanline
 SPRITEY			byte ; Current YPos Of Sprite
 SPRITEX			byte ; Current XPos Of Sprite
 TEMPSPRITEY		byte ; TempStorage of YPos
+NEXTNOTE		byte ; Current note to play
+TIMETILLCHANGE	byte ; How long until we need to change the note again
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -55,7 +57,9 @@ PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
 PLAYERSIZE		= #$07 ; Sprite size for main player
 STARTSPRITEY	= #$B0 ; Location of sprite on screen at start
 STARTSPRITEX	= #$0F ; Location of sprite on screen at start
-
+SONGLENGTH		= #$08 ; Number of notes in the song
+SONGTEMPO		= #$0a ; How often we change notes in the song
+SONGVOLUME		= #$8 ; Song Volume
 ;---Graphics Data for Player---
 
 PlayerFrame0
@@ -81,6 +85,32 @@ PlayerColourFrame0
         .byte #$00;
         .byte #$00;
 ;---End Color Data---
+
+; SongControl Data
+
+SongControlData
+		.byte #15
+		.byte #12
+		.byte #14
+		.byte #8
+		.byte #15
+		.byte #12
+		.byte #14
+		.byte #8
+; End SongControl Data
+
+; SongFrequency Data
+
+SongFrequencyData
+		.byte #15
+		.byte #12
+		.byte #14
+		.byte #8
+		.byte #15
+		.byte #12
+		.byte #2
+		.byte #9
+; End SongPitch Data
 
 
 ; ------------------------------------------------------------------
@@ -120,6 +150,10 @@ Start
 				ldx #0
 				jsr InitialiseRoad
 				
+				; Set music volume
+				lda #SONGVOLUME
+				sta AUDV0
+				
 ; ------------------------------------------------------------------
 ; 				Handle VBLANK and VSYNC (NTSC)
 ; ------------------------------------------------------------------
@@ -148,6 +182,9 @@ NextFrame
 				
 				lda SPRITEY
 				sta TEMPSPRITEY
+				
+				; Update music
+				jsr UpdateMusic
 RotateRoad
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
@@ -160,15 +197,14 @@ RotateRoad
 				sta CURRENTPATTERN
 				
 				ldx #ROADCYCLE
-PrepareLV	
+PrepareLV		
 				stx CURRENTCYCLE
 				
-				; Draw Playfield begin
+				; Reset first bg change to consider
 				ldx #SCREENHEIGHT
 					
 				lda ROADTOP
 				sta CURRENTROAD
-				ldy #PLAYERSIZE
 				
 				TIMER_WAIT
 				
@@ -370,6 +406,38 @@ CheckLeft
 				dex
 XPosWriteback
 				stx SPRITEX
+				rts
+				
+; ------------------------------------------------------------------
+;				Update Music			
+; ------------------------------------------------------------------
+
+				; Function to update the music
+UpdateMusic		subroutine
+
+				; Only change note when the tempo allows
+				ldx TIMETILLCHANGE
+				dex
+				bne .WrTempoChange
+				ldx #SONGTEMPO
+				
+				; Check which note to play
+				ldy NEXTNOTE
+				; Finally, write new song values
+				lda SongControlData,y
+				sta AUDC0
+				lda SongFrequencyData,y
+				sta AUDF0
+.WrNoteChange
+				; Make sure we're not going out of bounds
+				iny
+				cpy #SONGLENGTH
+				bne .NotSongEnd
+				ldy #0
+.NotSongEnd
+				sty NEXTNOTE
+.WrTempoChange	
+				stx TIMETILLCHANGE
 				rts
 				
 ; ------------------------------------------------------------------

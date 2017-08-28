@@ -13,30 +13,35 @@
 ;				START ROM
 ; ------------------------------------------------------------------
 				
-				; Start Code here (Start of the ROM memory space)
-				seg Code
-				org $F000
 				
 ; ------------------------------------------------------------------
 ;				Variables In RAM
 ; ------------------------------------------------------------------
 
-ROADTOP			= $80 ; Top of road
-ROADBOT			= $81 ; Bottom of road
-ROADCENTRE		= $82 ; Centre line of road
-ROADWIDTHHALF	= $84 ; Half of RoadWidth
-CURRENTROAD		= $86 ; Shadow of what a is holding when drawing the road
-CURRENTPATTERN	= $87 ; Current Road Pattern
-CURRENTBG		= $89 ; Current BG Colour
-CURRENTCYCLE	= $90 ; Current cycle of road
-CURRENTLINE		= $91 ; CurrentScanline
-SPRITEY			= $92 ; Current YPos Of Sprite
-SPRITEX			= $93 ; Current XPos Of Sprite
+				; Start Code here (Start of the ROM memory space)
+				seg.u Variables
+				org $80 ; (Start of RAM)
+				
+ROADTOP			byte ; Top of road
+ROADBOT			byte ; Bottom of road
+ROADCENTRE		byte ; Centre line of road
+ROADWIDTHHALF	byte ; Half of RoadWidth
+CURRENTROAD		byte ; Shadow of what a is holding when drawing the road
+CURRENTPATTERN	byte ; Current Road Pattern
+CURRENTBG		byte ; Current BG Colour
+CURRENTCYCLE	byte ; Current cycle of road
+CURRENTLINE		byte ; CurrentScanline
+SPRITEY			byte ; Current YPos Of Sprite
+SPRITEX			byte ; Current XPos Of Sprite
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
 ; ------------------------------------------------------------------
 
+				; Start Code here (Start of the ROM memory space)
+				seg Code
+				org $F000
+				
 BGOFFCOLOUR		= #$28 ; Dusty Desert
 BGONCOLOUR		= #$04 ; Dark Grey
 ROADCOLOUR		= #$0E ; White
@@ -53,11 +58,11 @@ STARTSPRITEX	= #$0F ; Location of sprite on screen at start
 ;---Graphics Data for Player---
 
 PlayerFrame0
+        .byte #0 ; Padding
         .byte #%01100110;$02
         .byte #%01100110;$02
         .byte #%01111111;$00
         .byte #%01111111;$00
-        .byte #%01111111;$0E
         .byte #%01111111;$0E
         .byte #%00111100;$00
         .byte #%00111100;$00
@@ -66,11 +71,11 @@ PlayerFrame0
 ;---Color Data for Player---
 
 PlayerColourFrame0
+        .byte #$FF; Black
         .byte #$02;
         .byte #$02;
         .byte #$00;
         .byte #$00;
-        .byte #$0E;
         .byte #$0E;
         .byte #$00;
         .byte #$00;
@@ -270,12 +275,10 @@ DrawSprite		subroutine
 				
 				; Sync and store sprite values
 .SpriteDrawVal	
-				sta WSYNC
 				lda PlayerFrame0,y
 				sta GRP0
 				lda PlayerColourFrame0,y
 				sta COLUP0
-				dex
 				rts				
 
 ; ------------------------------------------------------------------

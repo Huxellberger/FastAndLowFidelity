@@ -53,7 +53,7 @@ ROADCYCLE		= #$06 ; Frames before we cycle the road pattern
 ROADPATTERN		= #%10101010 ; Markings on the road default pattern
 PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
 PLAYERSIZE		= #$07 ; Sprite size for main player
-STARTSPRITEY	= #$70 ; Location of sprite on screen at start
+STARTSPRITEY	= #$B0 ; Location of sprite on screen at start
 STARTSPRITEX	= #$0F ; Location of sprite on screen at start
 
 ;---Graphics Data for Player---
@@ -267,9 +267,9 @@ DrawSprite		subroutine
 				; Are we within sprite bounds?
 				lda #PLAYERSIZE ; height in 2xlines
 				sec
-				isb TEMPSPRITEY	; INC yp0, then SBC yp0
+				isb TEMPSPRITEY	; INCs TEMP and then subtracts it from a (so we only draw it when we're at the right pos)
 				bcs .SpriteDrawVal ; inside bounds?
-				lda #0	
+				lda #0	; Use padding value so we draw nothing when we don't want to show the sprite
 				; Sync and store sprite values
 .SpriteDrawVal	
 				tay
@@ -334,33 +334,40 @@ InitialiseRoad	subroutine
 				; Function to handle all the inputs in a standard Toretto Game
 HandleInput		subroutine
 
+				; Up and down are reversed
 CheckDown
 				ldy SPRITEY
 				lda SWCHA
 				tax
-				eor #%11011111
+				eor #%11101111
 				bne CheckUp
-				dey
+				cpy #254 ; Stop wrapping
+				bcs CheckUp
+				iny
 				jmp YPosWriteback
 CheckUp
 				txa
-				eor #%11101111
+				eor #%11011111
 				bne CheckRight
-				iny
+				cpy #73 ; Stop wrapping
+				bcc CheckRight
+				dey
 				
 YPosWriteback
 				sty SPRITEY
-				
 CheckRight		
 				ldx SPRITEX
 				bit SWCHA ; right and left stored in the top two bits so can be cheeky like this
-				bvs CheckLeft
-				dex
+				bmi CheckLeft
+				cpx #130 ;Stop wrapping
+				bcs CheckLeft
+				inx
 CheckLeft
 				bit SWCHA
-				bmi XPosWriteback
-				inx
-				
+				bvs XPosWriteback
+				cpx #1 ;Stop wrapping
+				bcc XPosWriteback
+				dex
 XPosWriteback
 				stx SPRITEX
 				rts

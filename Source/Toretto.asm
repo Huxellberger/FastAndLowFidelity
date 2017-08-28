@@ -63,7 +63,6 @@ PlayerFrame0
         .byte #%00111100;$00
 ;---End Graphics Data---
 
-
 ;---Color Data for Player---
 
 PlayerColourFrame0
@@ -143,7 +142,6 @@ NextFrame
 				
 				; Handle Input
 				jsr HandleInput
-				
 RotateRoad
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
@@ -156,7 +154,6 @@ RotateRoad
 				sta CURRENTPATTERN
 				
 				ldx #ROADCYCLE
-				
 PrepareLV	
 				stx CURRENTCYCLE
 				
@@ -210,14 +207,12 @@ DrawOnRoad
 				lda #BGONCOLOUR
 				sta COLUBK
 				sta CURRENTBG
-				
 GetRoadCentre
 				lda ROADCENTRE
 				sta CURRENTROAD
 				
 				jmp NotRoad
 CentreDraw		
-				
 				lda CURRENTPATTERN ; Because load/store affects flags lots of duping done here...
 				sta PF1
 				BITWISE_NOT ; PF2 is reverse ordered to PF1 (as is PF0)
@@ -227,9 +222,7 @@ CentreDraw
 				lda ROADBOT
 				sta CURRENTROAD
 NotRoad
-
 				jsr DrawSprite
-
 EndScan
 				dex
 				bne LVScan
@@ -269,7 +262,10 @@ DrawSprite		subroutine
 				sbc CURRENTLINE
 				tay
 				sbc #PLAYERSIZE
-				bcc .SpriteDrawVal 
+				bcc .SpriteDrawVal
+				lda #0
+				sta GRP0
+				sta COLUP0
 				rts
 				
 				; Sync and store sprite values

@@ -33,6 +33,7 @@ CURRENTCYCLE	byte ; Current cycle of road
 CURRENTLINE		byte ; CurrentScanline
 SPRITEY			byte ; Current YPos Of Sprite
 SPRITEX			byte ; Current XPos Of Sprite
+TEMPSPRITEY		byte ; TempStorage of YPos
 
 ; ------------------------------------------------------------------
 ;				Variables In ROM
@@ -51,7 +52,7 @@ VBLANKLINES		= #$25 ; Number of lines of VBLANK (Change on PAL)
 ROADCYCLE		= #$06 ; Frames before we cycle the road pattern
 ROADPATTERN		= #%10101010 ; Markings on the road default pattern
 PFSETTINGS		= #%00000000 ; Playfield settings for CTRLPF
-PLAYERSIZE		= #$08 ; Sprite size for main player
+PLAYERSIZE		= #$07 ; Sprite size for main player
 STARTSPRITEY	= #$70 ; Location of sprite on screen at start
 STARTSPRITEX	= #$0F ; Location of sprite on screen at start
 
@@ -145,8 +146,8 @@ NextFrame
 				sta WSYNC
 				sta HMOVE
 				
-				; Handle Input
-				jsr HandleInput
+				lda SPRITEY
+				sta TEMPSPRITEY
 RotateRoad
 				; Rotate road pattern if required (Gives illusion of movement)
 				ldx CURRENTCYCLE
@@ -238,7 +239,10 @@ EndScan
 				
 				ENABLE_VBLANK
 				TIMER_SET_SCANLINE_DELAY_NTSC_OVERSCAN
-				; Overscan logic
+				
+				; Handle Input
+				jsr HandleInput
+				
 				DISABLE_VBLANK
 				
 ; ------------------------------------------------------------------
@@ -261,20 +265,14 @@ EndScan
 DrawSprite		subroutine
 				
 				; Are we within sprite bounds?
-				stx CURRENTLINE
-				lda SPRITEY
+				lda #PLAYERSIZE ; height in 2xlines
 				sec
-				sbc CURRENTLINE
-				tay
-				sbc #PLAYERSIZE
-				bcc .SpriteDrawVal
-				lda #0
-				sta GRP0
-				sta COLUP0
-				rts
-				
+				isb TEMPSPRITEY	; INC yp0, then SBC yp0
+				bcs .SpriteDrawVal ; inside bounds?
+				lda #0	
 				; Sync and store sprite values
 .SpriteDrawVal	
+				tay
 				lda PlayerFrame0,y
 				sta GRP0
 				lda PlayerColourFrame0,y
